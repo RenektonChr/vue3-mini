@@ -38,9 +38,10 @@ let b;
 effect(() => {
   // 函数
   // effect一开始就会执行一次
-  b = a.value + 10;
-  console.log(b)
+  // b = a.value + 10;
+  console.log(111)
 });
 
 // 当a变化时，effect还会再次执行！
 a.value = 30;
+a.value = 40;
