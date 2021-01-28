@@ -1,85 +1,46 @@
-// v1
-/* 
-// 回归本质问题
-let a = 20;
-let b;
+// 第三次
 
-b = a + 20;
-
-// b依赖于a，b的变化是命令式的
-console.log(b)
-*/
-
-/*
-// v2 封装性
-let a;
-let b;
-function updata() {
-  b = a + 20;
-  console.log(b)
-}
-
-// b同样依赖于a，只不过是封装一个update函数，其本质也是通过命令式的逻辑代码  手动进行更新！
-a = 20;
-updata();
-
-a = 12;
-updata();
-*/
-
-/*
-// v3
-// 我们可以使用一些相应是的库, Vue3的reactivity模块
-const { effect, reactive } = require('@vue/reactivity');
-
-let a = reactive({
-  value: 10,
-});
-let b;
-effect(() => {
-  // 在最初effect中的函数会自动执行一次，可以算作初始化（但并不准确）。
-  b = a.value + 10;
-  console.log(b)
-})
-// 改变a的值
-a.value = 30;
-*/
-
-// v4 自己写一个响应式库...    这是重点
+// 整理思路   独立完成   开干！
 
 /**
- * vue2.x中的响应式实现原理
- * 1. 依赖收集
- * 2. 依赖触发
- * 
- * 数据响应式的实现就是实现这两个部分（值类型的响应式）
+ * Vue2和Vue3响应式源码的不同之处在于，Vue2使用了ES5的defineProperty，Vue3则使用了ES6的Proxy。
+ * 但是vue2和Vue3的响应式设计原理是相同的，都是数据劫持，也就是依赖的收集和通知。
+ * 在设计模式上都是订阅发布模式。
  */
 
-//  依赖类
-let currentEffect;
+ /**
+  * Vue3实现响应式主要完成两个任务：
+  * 1. 依赖收集
+  * 2. 依赖通知（执行）
+  */
+
+// 依赖类
+let currentEffrct;
 class Dep {
-  constructor(val) {
+  constructor (val) {
+    // 这里使用ES6+的集合数据结构，是因为依赖不能重复收集。
     this.effects = new Set();
     this._val = val;
   }
 
   get value() {
-    dep.depend();
+    this.depend();
     return this._val;
   }
 
   set value(newVal) {
     this._val = newVal;
-    dep.notice();
+    this.notice();
   }
-  // 收集依赖
+
+  // 依赖收集
   depend() {
-    if (currentEffect) {
-      this.effects.add(currentEffect);
+    if(currentEffrct) {
+      this.effects.add(currentEffrct);
     }
   }
 
-  // 通知依赖，执行
+  // 依赖通知
   notice() {
     this.effects.forEach(effect => {
       effect();
@@ -88,82 +49,21 @@ class Dep {
 }
 
 
+// 依赖收集的函数
 function effectWatch(effect) {
-  currentEffect = effect;
-  effect()
-  currentEffect = null;
+  currentEffrct = effect;
+  effect();
+  currentEffrct = null;
 }
 
-
-const dep = new Dep(10)
+let a;
+let b;
+const dep = new Dep(10);
 
 effectWatch(() => {
-  b = dep.value + 10;
-  console.log(b);
+  a = dep.value + 10;
+  b = a + 1;
+  console.log(b)
 })
 
-
-dep.value = 20;
-
-// reactive
-// 以上的代码实现的是一个单值的响应式
-// dep ---> number string
-// object ---> key ---> dep  对象的话每一个key  对应了一个dep对象   来收集依赖  触发依赖
-
-// 1. 这个对象在什么时候改变的
-// object.a --> get
-// object.a = 2 ---> set
-
-// vue2 使用了一个defineProperties
-// vue3 使用了proxy   代理对象
-
-// get  set  实际上就是一种面向切面编程的编程范式
-const targetMap = new Map();
-function getDep(target, key) {
-  let depsMap = targetMap.get(target);
-  if (!depsMap) {
-    depsMap = new Map();
-    targetMap.set(target, depsMap);
-    console.log('depsMap---->', depsMap);
-  }
-  let dep = depsMap.get(key);
-  if (!dep) {
-    dep = new Dep();
-    depsMap.set(key, dep);
-  }
-
-  return dep;
-}
-function reactive(obj) {
-  return new Proxy(obj, {
-    get(target, key) {
-      // key --> dep
-      const dep = getDep(target, key);
-      // 做依赖收集
-      dep.depend();
-
-      return Reflect.get(target, key);
-    },
-
-    set(target, key, value) {
-      // 触发依赖
-      // 要获取到相应的dep
-      const dep = getDep(target, key);
-      const result = Reflect.set(target, key, value);
-      dep.notice();
-      return result;
-    }
-  })
-}
-
-const proxyObj = reactive({ name: 'renekton', age: 18 });
-
-let double;
-effectWatch(() => {
-  console.log('---reactive---');
-  double = proxyObj.age;
-  console.log(double);
-})
-
-proxyObj.age = 30
-
+dep.value = 12;
