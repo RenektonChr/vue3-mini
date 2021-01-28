@@ -105,3 +105,32 @@ effectWatch(() => {
 
 dep.value = 20;
 
+// reactive
+// 以上的代码实现的是一个单值的响应式
+// dep ---> number string
+// object ---> key ---> dep  对象的话每一个key  对应了一个dep对象   来收集依赖  触发依赖
+
+// 1. 这个对象在什么时候改变的
+// object.a --> get
+// object.a = 2 ---> set
+
+// vue2 使用了一个defineProperties
+// vue3 使用了proxy   代理对象
+
+// get  set  实际上就是一种面向切面编程的编程范式
+function reactive (obj) {
+  return new Proxy(obj, {
+    get (target, key) {
+      console.log('get target--->', target);
+      console.log('get key--->', key);
+      return Reflect.get(target, key);
+    }
+  })
+}
+
+const proxyObj = reactive({ name: 'renekton', age: 18 });
+
+console.log('proxyObj--->', proxyObj);
+
+console.log('proxyObj.age--->', proxyObj.age);
+
