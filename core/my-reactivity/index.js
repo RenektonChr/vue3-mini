@@ -58,7 +58,7 @@ a.value = 30;
 //  依赖类
 let currentEffect;
 class Dep {
-  constructor (val) {
+  constructor(val) {
     this.effects = new Set();
     this._val = val;
   }
@@ -74,7 +74,7 @@ class Dep {
   }
   // 收集依赖
   depend() {
-    if(currentEffect) {
+    if (currentEffect) {
       this.effects.add(currentEffect);
     }
   }
@@ -118,19 +118,52 @@ dep.value = 20;
 // vue3 使用了proxy   代理对象
 
 // get  set  实际上就是一种面向切面编程的编程范式
-function reactive (obj) {
+const targetMap = new Map();
+function getDep(target, key) {
+  let depsMap = targetMap.get(target);
+  if (!depsMap) {
+    depsMap = new Map();
+    targetMap.set(target, depsMap);
+    console.log('depsMap---->', depsMap);
+  }
+  let dep = depsMap.get(key);
+  if (!dep) {
+    dep = new Dep();
+    depsMap.set(key, dep);
+  }
+
+  return dep;
+}
+function reactive(obj) {
   return new Proxy(obj, {
-    get (target, key) {
-      console.log('get target--->', target);
-      console.log('get key--->', key);
+    get(target, key) {
+      // key --> dep
+      const dep = getDep(target, key);
+      // 做依赖收集
+      dep.depend();
+
       return Reflect.get(target, key);
+    },
+
+    set(target, key, value) {
+      // 触发依赖
+      // 要获取到相应的dep
+      const dep = getDep(target, key);
+      const result = Reflect.set(target, key, value);
+      dep.notice();
+      return result;
     }
   })
 }
 
 const proxyObj = reactive({ name: 'renekton', age: 18 });
 
-console.log('proxyObj--->', proxyObj);
+let double;
+effectWatch(() => {
+  console.log('---reactive---');
+  double = proxyObj.age;
+  console.log(double);
+})
 
-console.log('proxyObj.age--->', proxyObj.age);
+proxyObj.age = 30
 
