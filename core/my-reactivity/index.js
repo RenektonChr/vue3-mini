@@ -15,10 +15,11 @@
   */
 
 // 依赖类
-let currentEffrct;
+let currentEffect;
 class Dep {
+  // 依赖存储
   constructor (val) {
-    // 这里使用ES6+的集合数据结构，是因为依赖不能重复收集。
+    // 使用ES6+ 集合数据结构   依赖的收集不能重复
     this.effects = new Set();
     this._val = val;
   }
@@ -35,12 +36,12 @@ class Dep {
 
   // 依赖收集
   depend() {
-    if(currentEffrct) {
-      this.effects.add(currentEffrct);
+    if(currentEffect) {
+      this.effects.add(currentEffect);
     }
   }
 
-  // 依赖通知
+  // 依赖触发
   notice() {
     this.effects.forEach(effect => {
       effect();
@@ -48,22 +49,35 @@ class Dep {
   }
 }
 
-
-// 依赖收集的函数
+// 触发依赖收集
 function effectWatch(effect) {
-  currentEffrct = effect;
+  currentEffect = effect;
   effect();
-  currentEffrct = null;
+  currentEffect = null;
 }
 
-let a;
-let b;
-const dep = new Dep(10);
+// reactive
+// dep ---> number string
+// object ---> key ---> dep
 
-effectWatch(() => {
-  a = dep.value + 10;
-  b = a + 1;
-  console.log(b)
-})
+/**
+ * 对象的响应式方法实现主要是完成两个事儿：
+ * 对象在什么时候改变的
+ * object.a --> get
+ * object.a = 2 --> set
+ */
 
-dep.value = 12;
+// vue3  proxy
+function reactive (obj) {
+  return new Proxy(obj, {
+    get(target, key) {
+      console.log(key);
+    },
+    set(target, key, value) {
+
+    }
+  })
+}
+
+const proxyObj = reactive({ name: 'renkton', age: 18 });
+proxyObj.name
