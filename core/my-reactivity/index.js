@@ -1,7 +1,4 @@
 // v1
-
-const { effect } = require("@vue/reactivity");
-
 /* 
 // 回归本质问题
 let a = 20;
@@ -57,53 +54,54 @@ a.value = 30;
  * 
  * 数据响应式的实现就是实现这两个部分（值类型的响应式）
  */
+
+//  依赖类
 let currentEffect;
 class Dep {
-  constructor(val) {
-    // 使用Set（集合）这个数据结构来存储依赖，Set是不能重复的集合。
+  constructor (val) {
     this.effects = new Set();
     this._val = val;
   }
 
   get value() {
-    this.depend();
-    return this._val
+    dep.depend();
+    return this._val;
   }
 
   set value(newVal) {
-    this._val = newVal
-    this.notice();
+    this._val = newVal;
+    dep.notice();
   }
-
+  // 收集依赖
   depend() {
-    console.log('currentEffect--->', currentEffect)
-    // 依赖收集
     if(currentEffect) {
       this.effects.add(currentEffect);
     }
   }
 
+  // 通知依赖，执行
   notice() {
-    // 以来触发
     this.effects.forEach(effect => {
       effect();
     })
   }
 }
 
-const dep = new Dep(10);
-// effectWatch是个函数
+
 function effectWatch(effect) {
   currentEffect = effect;
-  effect();
+  effect()
   currentEffect = null;
 }
 
-let b;
+
+const dep = new Dep(10)
+
 effectWatch(() => {
-  b = dep.value + 10
-  console.log('啦啦啦啦  德玛西亚')
+  b = dep.value + 10;
+  console.log(b);
 })
-// b = dep.value
-dep.value = 30;
-dep.value = 60;
+
+
+dep.value = 20;
+
