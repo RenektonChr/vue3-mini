@@ -1,4 +1,4 @@
-import { reactive, effectWatch } from './core/reactivity/index.js'
+import { reactive, effectWatch } from './core/my-reactivity/index.js'
 
 // 声明一个响应式对象
 // ref --> 一般接收值类型

@@ -8,18 +8,56 @@
  * 在设计模式上都是订阅发布模式。
  */
 
- /**
-  * Vue3实现响应式主要完成两个任务：
-  * 1. 依赖收集
-  * 2. 依赖通知（执行）
-  */
+/**
+ * Vue3实现响应式主要完成两个任务：
+ * 1. 依赖收集
+ * 2. 依赖通知（执行）
+ */
 
-// 依赖类
+
+/*
+
+// 回归本质
+// 1. 命令式的响应（过程使然）
+let a = 0;
+let b = a + 1;
+console.log(b);
+a = 3;
+b = a + 1;
+console.log(b);
+
+// 2. 函数封装
+function update() {
+  b = a + 1
+  console.log(b)
+}
+
+a = 12;
+update();
+
+a = 55;
+update();
+
+// 使用第三方库
+const { reactive, effect }  = require('@vue/reactivity');
+
+const user = reactive({ name: 'cuihaoran', age: 18 });
+let aa;
+effect(() => {
+  // console.log('age: ' + user.age);
+  aa = user.age * 2
+  console.log('age * 2 : ' + aa) 
+})
+
+user.age = 19;
+
+*/
+
+// 重写一个响应式库
 let currentEffect;
 class Dep {
-  // 依赖存储
-  constructor (val) {
-    // 使用ES6+ 集合数据结构   依赖的收集不能重复
+  constructor(val) {
+    // 依赖不能重复收集
     this.effects = new Set();
     this._val = val;
   }
@@ -30,54 +68,61 @@ class Dep {
   }
 
   set value(newVal) {
-    this._val = newVal;
+    this._val = newVal
     this.notice();
   }
 
-  // 依赖收集
+  // 收集依赖
   depend() {
-    if(currentEffect) {
+    if (currentEffect) {
       this.effects.add(currentEffect);
     }
   }
 
-  // 依赖触发
+  // 触发依赖
   notice() {
-    this.effects.forEach(effect => {
-      effect();
+    this.effects.forEach((effect) => {
+      effect()
     })
   }
 }
 
-// 触发依赖收集
-function effectWatch(effect) {
+export function effectWatch(effect) {
   currentEffect = effect;
   effect();
   currentEffect = null;
 }
 
-// reactive
-// dep ---> number string
-// object ---> key ---> dep
+const targetMap = new Map();
+function getDep(target, key) {
+  let depsMap = targetMap.get(target)
+  if (!depsMap) {
+    depsMap = new Map();
+    targetMap.set(target, depsMap);
+  }
+  let dep = depsMap.get(key);
+  if (!dep) {
+    dep = new Dep();
+    depsMap.set(key, dep);
+  }
 
-/**
- * 对象的响应式方法实现主要是完成两个事儿：
- * 对象在什么时候改变的
- * object.a --> get
- * object.a = 2 --> set
- */
+  return dep;
+}
 
-// vue3  proxy
-function reactive (obj) {
+export function reactive(obj) {
   return new Proxy(obj, {
     get(target, key) {
-      console.log(key);
+      // 收集依赖
+      const dep = getDep(target, key);
+      dep.depend();
+      return Reflect.get(target, key);
     },
     set(target, key, value) {
-
+      const dep = getDep(target, key);
+      const result = Reflect.set(target, key, value);
+      // 触发依赖
+      dep.notice();
+      return result
     }
   })
 }
-
-const proxyObj = reactive({ name: 'renkton', age: 18 });
-proxyObj.name
